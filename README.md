@@ -3,6 +3,6 @@ Learning glsl shader with help of [GlslCanvas](https://github.com/patriciogonzal
 
 To preview an HTML file in GitHub Codespaces,
 1. Open Terminal: Access the terminal within Codespaces.
-2. Install http-server: Type npm i -g http-server. 
-3. Run Server: Type http-server.
+2. Install http-server: Type "npm i -g http-server". 
+3. Run Server: Type "http-server".
 4. Open in Browser: Codespaces will typically detect the running server and provide an option to "Open in Browser" for the exposed port.
