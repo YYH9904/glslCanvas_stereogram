@@ -1,34 +1,21 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="zh-TW">
 <head>
-    <meta charset="utf-8">
-    <title>GlslCanvas</title>
-    <script type="text/javascript" src="dist/GlslCanvas.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project: Windblind - Stereogram Base</title>
     <style>
-        body {
-            background: #101515;
-        }
-        #glslCanvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        canvas { width: 100vw; height: 100vh; display: block; }
     </style>
 </head>
 <body>
-    <canvas id="glslCanvas" data-fragment-url="11_breathingGlowMultiMouse.frag" width="800" height="600" data-textures="data/moon.jpg, data/MonaLisa.jpg"></canvas>
+    <canvas class="glslCanvas" 
+            data-fragment="shader.frag" 
+            data-textures="data/camo_v4.png, data/DepthMap_v0.png"
+            width="1920" height="1080">
+    </canvas>
+
+    <script type="text/javascript" src="dist/GlslCanvas.js"></script>
 </body>
-<script>
-    var canvas = document.getElementById("glslCanvas");
-    var sandbox = new GlslCanvas(canvas);
-    var texCounter = 0;
-    var sandbox_content = "";
-    var sandbox_title = "";
-    var sandbox_author = "";
-    var sandbox_thumbnail = "";
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-</script>
 </html>
