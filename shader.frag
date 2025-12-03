@@ -1,57 +1,90 @@
 #ifdef GL_ES
-precision mediump float;
+precision highp float;
 #endif
 
-// 來自 HTML/GlslCanvas 的輸入變數
-uniform vec2 u_resolution; // 畫布長寬
-uniform vec2 u_mouse;      // 滑鼠位置 (暫時不用，但保留接口)
-uniform float u_time;      // 時間 (可用於製作流動的風)
-uniform sampler2D u_tex0;  // 你的迷彩圖 (The Lure / Camo)
-uniform sampler2D u_tex1;  // 你的深度圖 (The Predator / Depth)
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+// uniform sampler2D u_tex0; // Camo - No longer needed
+uniform sampler2D u_tex1; // Depth
 
-// --- 參數設定區 ---
-// 這是你可以調整 "立體感" 與 "迷彩密度" 的地方
-const float TILES = 8.0;      // 水平方向要重複幾次迷彩？ (越多越難看透，但也越細緻)
-const float DEPTH_POWER = 0.15; // 立體感的強度 (數值越大，隱藏物件 "浮" 起來越高)
+// --- Parameters ---
+const float TILES = 8.0;
+const float DEPTH_POWER = 0.05;
+
+// --- M90 Camouflage Generation ---
+// Helper function for pseudo-randomness
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+// M90 color palette
+const vec3 M90_BLACK = vec3(0.13, 0.13, 0.13);
+const vec3 M90_DARK_GREEN = vec3(0.20, 0.29, 0.18);
+const vec3 M90_LIGHT_GREEN = vec3(0.49, 0.58, 0.35);
+const vec3 M90_KHAKI = vec3(0.71, 0.69, 0.54);
+
+// Function to generate the M90 pattern color for a given UV
+vec4 m90(vec2 uv) {
+    uv *= 10.0; // Scale the pattern
+
+    vec2 id = floor(uv);
+    vec2 gv = fract(uv);
+
+    // Create 4 rotated and offset grids to form the angular shapes
+    vec4 n;
+    for(int i = 0; i < 4; i++) {
+        float fi = float(i);
+        // Rotate grid
+        vec2 nuv = uv + fi * 2.5;
+        nuv *= mat2(0.707, -0.707, 0.707, 0.707); // Rotate 45 degrees
+        // Get cell ID and random value
+        vec2 nid = floor(nuv);
+        n[i] = rand(nid);
+    }
+
+    // Use the random values to create stepped color fields
+    float c = step(0.2, n.x) + step(0.4, n.y) + step(0.6, n.z) + step(0.8, n.w);
+
+    // Select color from palette based on the combined fields
+    vec3 color = M90_KHAKI;
+    if (c > 0.5) color = M90_LIGHT_GREEN;
+    if (c > 1.5) color = M90_DARK_GREEN;
+    if (c > 2.5) color = M90_BLACK;
+
+    return vec4(color, 1.0);
+}
 
 void main() {
-    // 1. 歸一化座標 (Normalization)
-    // 將像素座標 (例如 x:960, y:540) 轉換為 0.0 到 1.0 的 uv 座標
     vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+    float tileWidth = 1.0 / TILES;
 
-    // 2. 讀取深度資訊 (Reading the Hidden Truth)
-    // 我們直接讀取深度圖的紅像色版 (r)。
-    // 假設深度圖中：白色(1.0) = 靠近觀眾(凸起)，黑色(0.0) = 遠離觀眾(背景)。
-    // 為了不讓深度圖本身變形，我們必須用原始的 uv 來讀取它。
-    vec4 depthColor = texture2D(u_tex1, uv);
-    float depth = depthColor.r; 
+    // This is our starting point for the color calculation.
+    vec2 stereoUv = uv;
 
-    // 3. 計算視差偏移 (Calculating Parallax)
-    // Stereogram 的原理：越靠近眼睛的東西，左右眼的視差越大。
-    // 在單張圖中，我們透過 "水平推移紋理" 來模擬這個視差。
-    // 深度越深 (depth 數值大)，我們讓紋理偏移得越多。
-    float parallaxShift = depth * DEPTH_POWER;
+    // We loop, moving left by one tile-width each time, until we are in the first tile.
+    // This simulates the recursive dependency of the stereogram.
+    for (int i = 0; i < 10; i++) { // Loop a few more times than TILES just to be safe.
+        if (stereoUv.x < tileWidth) {
+            break;
+        }
 
-    // 4. 迷彩紋理處理 (The Camouflage Processing)
-    // A. 建立重複紋理 (Tiling)：把 uv.x 乘以 TILES (比如 8)，讓迷彩在水平方向重複 8 次。
-    vec2 tiledUv = uv;
-    tiledUv.x *= TILES;
+        // --- Depth Map Smoothing ---
+        // The key is to blur the depth lookup. This prevents sharp changes in depth 
+        // from creating hard edges in the final image, which would reveal the depth map.
+        // We sample the depth map in a small 2x2 grid and average the results.
+        vec2 pixel = 1.0 / u_resolution;
+        float depth = 0.0;
+        depth += texture2D(u_tex1, stereoUv).r;
+        depth += texture2D(u_tex1, stereoUv + vec2(pixel.x, 0.0)).r;
+        depth += texture2D(u_tex1, stereoUv + vec2(0.0, pixel.y)).r;
+        depth += texture2D(u_tex1, stereoUv + vec2(pixel.x, pixel.y)).r;
+        depth /= 4.0;
 
-    // B. 注入資本結構 (Injecting the Hidden Structure)：
-    // 這是最關鍵的一步。我們把剛剛算出來的 "偏移量 (parallaxShift)" 加到紋理座標上。
-    // 這會導致迷彩圖案在有 "kWh/$" 的地方產生扭曲。
-    // 這種扭曲單眼看是亂碼，但雙眼焦距對上時，大腦會將其解析為深度。
-    tiledUv.x -= parallaxShift; 
+        float shift = depth * DEPTH_POWER;
+        stereoUv.x -= (tileWidth - shift);
+    }
 
-    // C. 加上一點點風的流動 (Optional: Slight Wind)
-    // 為了讓畫面不要死氣沉沉，我們讓迷彩本身有一點點緩慢的流動
-    // 這樣更像 "自然/偽裝"。
-    // tiledUv.x += u_time * 0.05; // (如果想要動態效果可打開這行)
-
-    // 5. 採樣顏色 (Sampling Color)
-    // 使用 fract() 取小數點，確保紋理座標在 0.0~1.0 之間循環，實現無縫拼接。
-    vec4 color = texture2D(u_tex0, fract(tiledUv));
-
-    // 6. 輸出最終像素
-    gl_FragColor = color;
+    // Once we've found the "source" pixel in the first tile, we get its color from the camo pattern.
+    gl_FragColor = m90(stereoUv);
 }
