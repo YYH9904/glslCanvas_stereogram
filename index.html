@@ -10,72 +10,12 @@
     </style>
 </head>
 <body>
-    <canvas id="glslCanvas" class="glslCanvas" 
-            data-fragment-url="shader.frag" uniform vec2 u_resolution;
-uniform vec2 u_mouse;
-uniform float u_time;
-// uniform sampler2D u_tex0; // Camo - No longer needed
-uniform sampler2D u_tex1; // Depth
-
-// --- Parameters ---
-const float TILES = 8.0;
-const float DEPTH_POWER = 0.05;
-
-// --- M90 Camouflage Generation ---
-// Helper function for pseudo-randomness
-float rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-}
-
-// M90 color palette
-const vec3 M90_BLACK = vec3(0.13, 0.13, 0.13);
-const vec3 M90_DARK_GREEN = vec3(0.20, 0.29, 0.18);
-const vec3 M90_LIGHT_GREEN = vec3(0.49, 0.58, 0.35);
-const vec3 M90_KHAKI = vec3(0.71, 0.69, 0.54);
-
-// Function to generate the M90 pattern color for a given UV
-vec4 m90(vec2 uv) {
-    uv *= 10.0; // Scale the pattern
-
-    vec2 id = floor(uv);
-    vec2 gv = fract(uv);
-
-    // Create 4 rotated and offset grids to form the angular shapes
-    vec4 n;
-    for(int i = 0; i < 4; i++) {
-        float fi = float(i);
-        // Rotate grid
-        vec2 nuv = uv + fi * 2.5;
-        nuv *= mat2(0.707, -0.707, 0.707, 0.707); // Rotate 45 degrees
-        // Get cell ID and random value
-        vec2 nid = floor(nuv);
-        n[i] = rand(nid);
-    }
-
-    // Use the random values to create stepped color fields
-    float c = step(0.2, n.x) + step(0.4, n.y) + step(0.6, n.z) + step(0.8, n.w);
-
-    // Select color from palette based on the combined fields
-    vec3 color = M90_KHAKI;
-    if (c > 0.5) color = M90_LIGHT_GREEN;
-    if (c > 1.5) color = M90_DARK_GREEN;
-    if (c > 2.5) color = M90_BLACK;
-
-    return vec4(color, 1.0);
-}
-
-void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-    float tileWidth = 1.0 / TILES;
-
-            data-textures="data/DepthMap_v0.png"
+    <canvas class="glslCanvas" 
+            data-fragment="shader.frag" 
+            data-textures="data/camo_v4.png, data/DepthMap_v0.png"
             width="1920" height="1080">
     </canvas>
 
     <script type="text/javascript" src="dist/GlslCanvas.js"></script>
-    <script>
-        var canvas = document.getElementById("glslCanvas");
-        var sandbox = new GlslCanvas(canvas);
-    </script>
 </body>
 </html>
