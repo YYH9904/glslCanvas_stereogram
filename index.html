@@ -3,50 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project: Windblind</title>
+    <title>Windblind: Trojan Texture</title>
     <style>
-        /* 讓畫布填滿視窗，背景設為黑 */
-        body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+        body { margin: 0; background: #000; overflow: hidden; }
         canvas { display: block; width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
     <canvas id="glslCanvas"></canvas>
-
     <script type="text/javascript" src="dist/GlslCanvas.js"></script>
 
     <script>
-        // 當頁面載入完成後執行
         window.onload = function() {
-            // 1. 抓取 Canvas 元素並設定大小
             var canvas = document.getElementById('glslCanvas');
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-
-            // 2. 初始化 GlslCanvas
             var sandbox = new GlslCanvas(canvas);
 
-            // 3. 讀取 shader.frag 檔案
-            fetch('stereogramv1.frag')
-                .then(response => {
-                    if (!response.ok) throw new Error("找不到 shader.frag 檔案");
-                    return response.text();
-                })
-                .then(shaderCode => {
-                    // 4. 將讀取到的 Shader 代碼載入引擎
-                    sandbox.load(shaderCode);
-                    
-                    // 5. 設定圖片 (Uniforms)
-                    // 請務必確認這裡的副檔名 (.png 或 .jpg) 與你資料夾內的檔案完全一致
-                    // u_tex0: 表面迷彩 (誘餌)
-                    // u_tex1: 深度資訊 (掠食者)
-                    sandbox.setUniform("u_tex0", "data/camo_v4.png"); 
-                    sandbox.setUniform("u_tex1", "data/DepthMap_v0.png");
-                    
-                    console.log("系統啟動: 擬態層已部署");
-                })
-                .catch(error => {
-                    console.error("啟動失敗:", error);
+            fetch('stereogramv3.frag')
+                .then(r => r.text())
+                .then(shader => {
+                    sandbox.load(shader);
+                    // 這裡只需要兩張圖：一張做深度(隱藏)，一張做紋理(顯示)
+                    // index.html 裡的設定
+                    sandbox.setUniform("u_tex0", "data/camo_v4.png");    // 美好表象
+                    sandbox.setUniform("u_tex1", "data/DepthMap_v0.png"); // 資本結構 (文字柱)
+                    sandbox.setUniform("u_tex2", "data/money_noise.png"); // 符號紋理
                 });
         };
     </script>
