@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project: Windblind - Aggressive Mimicry</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <canvas id="glslCanvas"></canvas>
+
+    <script type="text/javascript" src="dist/GlslCanvas.js"></script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        #ifdef GL_ES
+        precision mediump float;
+        #endif
+
+        uniform vec2 u_resolution; // 畫布長寬
+        uniform float u_time;      // 時間
+        uniform sampler2D u_tex0;  // 迷彩圖 (Surface/Lure)
+        uniform sampler2D u_tex1;  // 深度圖 (Hidden/Predator)
+
+        // --- 藝術參數調校區 ---
+        // TILES: 迷彩重複的次數。
+        // 數值越高 = 圖案越密 = 立體隱藏效果越好，但也越難聚焦。
+        const float TILES = 6.0; 
+
+        // DEPTH_POWER: 資本結構的「厚度」。
+        // 數值越大 = 立體感越強 = 圖像錯位越明顯 (但也越容易穿幫)。
+        const float DEPTH_POWER = 0.04; 
+
+        void main() {
+            // 1. 歸一化 (Normalization)
+            // 將螢幕上的像素位置 (x,y) 轉換成 0.0 到 1.0 的座標 (st)
+            vec2 st = gl_FragCoord.xy / u_resolution.xy;
+            
+            // 修正圖片比例 (防止迷彩被壓扁)
+            float aspect = u_resolution.x / u_resolution.y;
+            // st.x *= aspect; // 暫時關閉，視需要開啟
+
+            // 2. 讀取深度 (The Reveal)
+            // 我們去讀取深度圖 (u_tex1)。
+            // depth 變數現在代表了：這個位置有沒有藏著資本結構？(0=沒有, 1=有)
+            vec4 depthMap = texture2D(u_tex1, st);
+            float depth = depthMap.r; 
+
+            // 3. 施加攻擊性擬態 (Aggressive Mimicry Logic)
+            vec2 uv = st;
+
+            // A. 鋪設誘餌 (Tiling)
+            // 將迷彩圖案在水平方向重複 TILES 次
+            uv.x *= TILES;
+
+            // B. 扭曲現實 (Displacement)
+            // 這是 Stereogram 的核心數學。
+            // 如果這裡有隱藏結構 (depth > 0)，我們就將迷彩的採樣點往旁邊推移。
+            // 大腦會將這個推移解讀為「深度」。
+            uv.x -= depth * DEPTH_POWER;
+
+            // C. 加上一點呼吸感 (Breathing/Lure)
+            // 讓迷彩本身有一點點像生物般的緩慢蠕動，增加誘捕感
+            // uv.x += sin(u_time * 0.5 + uv.y * 5.0) * 0.005;
+
+            // 4. 繪製表象 (Rendering the Surface)
+            // 根據剛剛被扭曲過的 uv 座標，去抓取迷彩圖的顏色
+            // fract() 是為了讓數值超過 1.0 時回到 0.0，實現無縫拼接
+            vec4 color = texture2D(u_tex0, fract(uv));
+
+            // 除錯：如果你想確認深度圖有沒有讀到，取消下面這行的註解
+            // gl_FragColor = vec4(vec3(depth), 1.0); return;
+
+            gl_FragColor = color;
+        }
+    </script>
+
+    <script>
+        window.onload = function() {
+            var canvas = document.getElementById('glslCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            var sandbox = new GlslCanvas(canvas);
+
+            // 1. 載入 Shader 代碼 (從上面的 script 標籤讀取)
+            var shaderSource = document.getElementById('fragment-shader').innerHTML;
+            sandbox.load(shaderSource);
+
+            // 2. 載入圖片 (請確保檔案名稱與路徑完全正確)
+            // u_tex0 = 迷彩 (Camo)
+            // u_tex1 = 深度 (Depth)
+            // 請確認你的檔案是 .jpg 還是 .png
+            sandbox.setUniform("u_tex0", "data/camo_v4.png"); 
+            sandbox.setUniform("u_tex1", "data/DepthMap_v0.png");
+        };
+    </script>
+</body>
+</html>

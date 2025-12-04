@@ -3,19 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project: Windblind - Stereogram Base</title>
+    <title>Project: Windblind</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-        canvas { width: 100vw; height: 100vh; display: block; }
+        /* 讓畫布填滿視窗，背景設為黑 */
+        body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+        canvas { display: block; width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
-    <canvas class="glslCanvas" 
-            data-fragment="shader.frag" 
-            data-textures="data/camo_v4.png, data/DepthMap_v0.png"
-            width="1920" height="1080">
-    </canvas>
+    <canvas id="glslCanvas"></canvas>
 
     <script type="text/javascript" src="dist/GlslCanvas.js"></script>
+
+    <script>
+        // 當頁面載入完成後執行
+        window.onload = function() {
+            // 1. 抓取 Canvas 元素並設定大小
+            var canvas = document.getElementById('glslCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // 2. 初始化 GlslCanvas
+            var sandbox = new GlslCanvas(canvas);
+
+            // 3. 讀取 shader.frag 檔案
+            fetch('stereogramv1.frag')
+                .then(response => {
+                    if (!response.ok) throw new Error("找不到 shader.frag 檔案");
+                    return response.text();
+                })
+                .then(shaderCode => {
+                    // 4. 將讀取到的 Shader 代碼載入引擎
+                    sandbox.load(shaderCode);
+                    
+                    // 5. 設定圖片 (Uniforms)
+                    // 請務必確認這裡的副檔名 (.png 或 .jpg) 與你資料夾內的檔案完全一致
+                    // u_tex0: 表面迷彩 (誘餌)
+                    // u_tex1: 深度資訊 (掠食者)
+                    sandbox.setUniform("u_tex0", "data/camo_v4.png"); 
+                    sandbox.setUniform("u_tex1", "data/DepthMap_v0.png");
+                    
+                    console.log("系統啟動: 擬態層已部署");
+                })
+                .catch(error => {
+                    console.error("啟動失敗:", error);
+                });
+        };
+    </script>
 </body>
 </html>
