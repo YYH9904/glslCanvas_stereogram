@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windblind: The Grasping Hand</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #hint {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: "Courier New", monospace;
+            pointer-events: none;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="glslCanvas"></canvas>
+    <div id="hint">Look beyond the grid. See the hand that feeds on wind.</div>
+
+    <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+
+    <script>
+        window.onload = function() {
+            var canvas = document.getElementById('glslCanvas');
+            var dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            
+            var sandbox = new GlslCanvas(canvas);
+
+            fetch('stereogram_turbines.frag')
+                .then(r => r.text())
+                .then(shader => {
+                    sandbox.load(shader);
+                    // 這裡需要一張 "手" 的深度圖
+                    // 白色 = 近 (手背/手指)，黑色 = 遠 (背景)
+                    sandbox.setUniform("u_depthTex", "data/Hand_3d_v2.png"); 
+                });
+
+            function render() {
+                sandbox.setUniform("u_time", performance.now() / 1000);
+                requestAnimationFrame(render);
+            }
+            render();
+        };
+    </script>
+</body>
+</html>

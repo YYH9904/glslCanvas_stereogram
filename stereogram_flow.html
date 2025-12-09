@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windblind: The Valuation of Wind</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        /* 隱藏的互動提示 (可選) */
+        #hint {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-family: monospace;
+            pointer-events: none;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="glslCanvas"></canvas>
+    <div id="hint">Gaze into the flow to see the structure.</div>
+
+    <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+
+    <script>
+        window.onload = function() {
+            var canvas = document.getElementById('glslCanvas');
+            
+            // [關鍵修正] 支援高解析度螢幕 (Retina Display)
+            // 這讓紙張顆粒 (Grain) 保持銳利，幫助眼睛對焦
+            var dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            
+            var sandbox = new GlslCanvas(canvas);
+
+            // 讀取你的 Shader 檔案
+            // 請確認你剛才的 Shader 程式碼已存檔名為 'stereogram_flow.frag'
+            fetch('stereogram_flow.frag')
+                .then(r => r.text())
+                .then(shader => {
+                    sandbox.load(shader);
+                    
+                    // [素材設定]
+                    // 1. 表象：流動的水彩風場 (注意是 .jpg)
+                    sandbox.setUniform("u_tex0", "data/camo_v4.png");    
+                    
+                    // 2. 真相：隱藏的扇葉深度圖
+                    sandbox.setUniform("u_tex1", "data/blade_depth_v0_2_strongerDepth.png"); 
+                });
+
+            // [關鍵修正] 加入 Render Loop 以驅動時間 (u_time)
+            // 這是讓風場「流動」起來的動力來源
+            function render() {
+                sandbox.setUniform("u_time", performance.now() / 1000);
+                requestAnimationFrame(render);
+            }
+            render();
+        };
+    </script>
+</body>
+</html>

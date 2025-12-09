@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windblind: The Black Reveal (Square)</title>
+    <title>Windblind: The Static Mirror (Square)</title>
     <style>
         body { 
             margin: 0; 
@@ -15,30 +15,16 @@
             overflow: hidden;
         }
         canvas { 
-            /* [關鍵] 強制正方形，並根據視窗短邊縮放 */
-            /* 90vmin 代表佔據螢幕短邊的 90%，留一點邊距 */
+            /* 強制正方形，佔據螢幕短邊的 90% */
             width: 90vmin; 
             height: 90vmin; 
-            box-shadow: 0 0 50px rgba(255, 255, 255, 0.1); /* 增加一點發光質感 */
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1); 
             background: #000;
-        }
-        #hint {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.3);
-            font-family: monospace;
-            font-size: 12px;
-            pointer-events: none;
-            letter-spacing: 2px;
-            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
     <canvas id="glslCanvas"></canvas>
-    <div id="hint">Darkness reveals the structure.</div>
 
     <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
 
@@ -47,23 +33,24 @@
             var canvas = document.getElementById('glslCanvas');
             var dpr = window.devicePixelRatio || 1;
             
-            // [關鍵修正] 讓內部解析度也是正方形
-            // 取視窗長寬的最小值，確保 1:1
+            // [關鍵] 計算正方形解析度
             var size = Math.min(window.innerWidth, window.innerHeight);
             canvas.width = size * dpr;
             canvas.height = size * dpr;
             
             var sandbox = new GlslCanvas(canvas);
 
-            fetch('stereogram_black_reveal.frag') 
+            fetch('stereogramv4_hand_mirror.frag') // 載入下方修改過的 Shader
                 .then(r => r.text())
                 .then(shader => {
                     sandbox.load(shader);
                     
-                    // 載入圖片 (請確保檔名正確)
-                    sandbox.setUniform("u_tex0", "data/20250417_175351.jpg"); 
+                    // [素材設定]
+                    // u_tex0: 請放入你修好的 1:1 風機照片 (例如 Turbine.jpg)
+                    sandbox.setUniform("u_tex0", "data/Turbine.jpg"); 
+                    
+                    // u_tex1: 手的深度圖
                     sandbox.setUniform("u_tex1", "data/hand_depth_refinedRoots.png");   
-                    sandbox.setUniform("u_tex2", "data/blade_depth_v0_2_strongerDepth.png"); 
                 });
 
             function render() {
@@ -72,7 +59,7 @@
             }
             render();
             
-            // 視窗縮放時重新計算大小
+            // 視窗縮放時保持正方形
             window.onresize = function() {
                 var size = Math.min(window.innerWidth, window.innerHeight);
                 canvas.width = size * dpr;

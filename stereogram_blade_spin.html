@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windblind: The Hidden Hand</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #hint {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: monospace;
+            font-size: 14px;
+            pointer-events: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="glslCanvas"></canvas>
+    <div id="hint">Relax your eyes. Look through the screen.</div>
+
+    <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+
+    <script>
+        window.onload = function() {
+            var canvas = document.getElementById('glslCanvas');
+            
+            // 確保高解析度渲染 (Retina Display)
+            var dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            
+            var sandbox = new GlslCanvas(canvas);
+            
+            // 載入 Shader 與圖片
+            fetch('stereogram_blade_spin.frag') // 注意這裡改檔名
+                .then(r => r.text())
+                .then(shader => {
+                    sandbox.load(shader);
+                    
+                    // [關鍵改變] u_tex0 改放你的扇葉圖
+                    sandbox.setUniform("u_tex0", "data/blade_depth_v0_2_strongerDepth.png"); 
+                    
+                    // u_tex1 維持放手的深度圖
+                    sandbox.setUniform("u_tex1", "data/hand_depth_refinedRoots.png");   
+                });
+
+            // 啟動渲染循環 (雖然這是靜態圖，但保留 u_time 可供未來做微幅飄動)
+            function render() {
+                sandbox.setUniform("u_time", performance.now() / 1000);
+                requestAnimationFrame(render);
+            }
+            render();
+        };
+    </script>
+</body>
+</html>
