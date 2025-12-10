@@ -1,8 +1,7 @@
-Learning glsl shader with help of [GlslCanvas](https://github.com/patriciogonzalezvivo/glslCanvas).
-[GlslCanvas](https://github.com/patriciogonzalezvivo/glslCanvas) is JavaScript Library that helps you easily load GLSL Fragment and Vertex Shaders into an HTML canvas. Originally made by Patricio Gonzalez Vivo author of [Book of Shaders](http://thebookofshaders.com) and [glslEditor](http://editor.thebookofshaders.com).
+《Beyond the Gaze 焦距之外》
 
-To preview an HTML file in GitHub Codespaces,
-1. Open Terminal: Access the terminal within Codespaces.
-2. Install http-server: Type "npm i -g http-server". 
-3. Run Server: Type "http-server".
-4. Open in Browser: Codespaces will typically detect the running server and provide an option to "Open in Browser" for the exposed port.
+《Beyond the Gaze 焦距之外》探索一種偏離日常視線的觀看方式。
+在流動的紋理之下，等待觀者在失焦與對焦之間的，是藏於深處的偽裝。
+
+作品將觀看成為一種試探，視覺漂移的瞬間，也許能觸及那些被視線掠過的結構。
+
